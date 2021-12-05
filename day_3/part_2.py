@@ -11,6 +11,7 @@ class Thing:
     def insert(self, item):
         d = len(item)
         current = self.root
+        # In theory we can cast to `int` here, but meh.
         for char in item:
             current.sub_items += d
             node = current.children.get(char, None)
@@ -21,25 +22,25 @@ class Thing:
             d -= 1
 
     def max_path(self):
-        res = ''
+        res = 0
         current = self.root
         while True:
             if not current.children:
-                return int(res, 2)
-            max_pair = max((node.sub_items, k) for k, node in current.children.items())
-            max_key = max_pair[-1]
-            res += max_key
+                return res
+            res <<= 1
+            _, max_key = max((node.sub_items, k) for k, node in current.children.items())
+            res |= int(max_key)
             current = current.children[max_key]
 
     def min_path(self):
-        res = ''
+        res = 0
         current = self.root
         while True:
             if not current.children:
-                return int(res, 2)
-            min_pair = min((node.sub_items, k) for k, node in current.children.items())
-            min_key = min_pair[-1]
-            res += min_key
+                return res
+            res <<= 1
+            _, min_key = min((node.sub_items, k) for k, node in current.children.items())
+            res |= int(min_key)
             current = current.children[min_key]
 
 if __name__ == "__main__":
