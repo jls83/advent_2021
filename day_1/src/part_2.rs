@@ -7,8 +7,8 @@ fn main() {
         .map(Result::unwrap)
         .collect();
 
-    let result: i32 = (0..ns.len()-1)
-        .map(|idx| (ns[idx+1] > ns[idx]) as i32)
+    let result: i32 = (0..ns.len()-3)
+        .map(|idx| (ns[idx+3] > ns[idx]) as i32)
         .sum();
 
     println!("{}", result);
