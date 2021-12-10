@@ -8,14 +8,9 @@ fn main() {
         .map(Result::unwrap)
         .collect();
 
-    let mut counter = 0;
-    let mut prev = std::i32::MAX;
+    let result: i32 = (0..ns.len()-1)
+        .map(|idx| (ns[idx+1] > ns[idx]) as i32)
+        .sum();
 
-    for n in ns {
-        if n > prev {
-            counter += 1;
-        }
-        prev = n;
-    }
-    println!("{}", counter);
+    println!("{}", result);
 }
