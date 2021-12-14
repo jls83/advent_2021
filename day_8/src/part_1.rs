@@ -1,9 +1,32 @@
 use std::include_str;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
 struct Display {
     lights: HashMap<u32, bool>,
+}
+
+impl Display {
+    fn possible_pins(&self) -> HashMap<u32, HashSet<u32>> {
+        let mut res: HashMap<u32, HashSet<u32>> = HashMap::new();
+
+        let possible_pins = match self.lights.keys().count() {
+            2 => vec![2, 5],
+            3 => vec![0, 2, 5],
+            4 => vec![1, 2, 3, 5],
+            5 => vec![0, 1, 2, 3, 4, 5, 6],
+            6 => vec![0, 1, 2, 3, 4, 5, 6],
+            7 => vec![0, 1, 2, 3, 4, 5, 6],
+            _ => vec![],
+        }.into_iter().collect::<HashSet<u32>>();
+
+        for pin in self.lights.keys() {
+            let val = res.entry(*pin).or_insert(HashSet::new());
+            val.extend(possible_pins.clone());
+        }
+
+        res
+    }
 }
 
 #[derive(Default)]
@@ -14,20 +37,16 @@ struct Configuration {
 }
 
 impl Configuration {
-    fn foo(&self) -> Vec<Vec<u32>> {
-        self.patterns.iter()
-            .map(|pattern| {
-                match pattern.lights.keys().count() {
-                    2 => vec![1],
-                    3 => vec![7],
-                    4 => vec![4],
-                    5 => vec![2, 3, 5],
-                    6 => vec![0, 6, 9],
-                    7 => vec![8],
-                    _ => vec![],
-                }
-            })
-            .collect()
+    fn foo(&self) -> HashMap<u32, HashSet<u32>> {
+        let mut res: HashMap<u32, HashSet<u32>> = HashMap::new();
+        for pattern in &self.patterns {
+            for (pin, possible_pins) in pattern.possible_pins() {
+                let val = res.entry(pin).or_insert(HashSet::new());
+                val.extend(possible_pins.clone());
+            }
+        }
+
+        res
     }
 }
 
@@ -67,8 +86,6 @@ fn main() {
         .map(Result::unwrap);
 
     for config in configs {
-        for x in config.foo() {
-            println!("{:?}", x);
-        }
+        println!("{:?}", config.foo());
     }
 }
