@@ -18,7 +18,6 @@ impl Line {
         let delta_x = self.end.x - self.start.x;
 
         (delta_y, delta_x)
-
     }
 
     fn value_range(&self) -> Vec<Point> {
