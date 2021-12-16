@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict
+from collections import defaultdict
 from functools import reduce
 
 def build_set(items, all_pins_set):
@@ -21,7 +21,6 @@ def f(things):
     size_5_diff_pins = build_set(size_5_items, size_7_set)
     size_6_diff_pins = build_set(size_6_items, size_7_set)
 
-    set_a = size_3_set - size_2_set
     set_b_d = size_4_set - size_2_set
     set_d = set_b_d.intersection(size_6_diff_pins)
     set_b = set_b_d - set_d
@@ -30,34 +29,29 @@ def f(things):
 
     set_c_e = size_6_diff_pins.intersection(p_0)
     set_c = size_2_set.intersection(set_c_e)
-
-    p_6 = size_7_set - set_c
-
     set_e = set_c_e - set_c
-
-    p_9 = size_7_set - set_e
-
     set_b_e = set_b.union(set_e)
-    p_3 = size_7_set - set_b_e
-    p_5 = size_7_set - set_c_e
-
     set_b_c_e = set_c_e.union(set_b)
     set_f = size_5_diff_pins - set_b_c_e
     set_b_f = set_b.union(set_f)
 
     p_2 = size_7_set - set_b_f
+    p_3 = size_7_set - set_b_e
+    p_5 = size_7_set - set_c_e
+    p_6 = size_7_set - set_c
+    p_9 = size_7_set - set_e
 
     return {
-            ''.join(sorted(p_0)): 0,
-            ''.join(sorted(size_2_set)): 1,  #p_1
-            ''.join(sorted(p_2)): 2,
-            ''.join(sorted(p_3)): 3,
-            ''.join(sorted(size_4_set)): 4,  # p_4
-            ''.join(sorted(p_5)): 5,
-            ''.join(sorted(p_6)): 6,
-            ''.join(sorted(size_3_set)): 7,  # p_7
-            ''.join(sorted(size_7_set)): 8,  # p_8
-            ''.join(sorted(p_9)): 9,
+        ''.join(sorted(p_0)): 0,
+        ''.join(sorted(size_2_set)): 1,  #p_1
+        ''.join(sorted(p_2)): 2,
+        ''.join(sorted(p_3)): 3,
+        ''.join(sorted(size_4_set)): 4,  # p_4
+        ''.join(sorted(p_5)): 5,
+        ''.join(sorted(p_6)): 6,
+        ''.join(sorted(size_3_set)): 7,  # p_7
+        ''.join(sorted(size_7_set)): 8,  # p_8
+        ''.join(sorted(p_9)): 9,
     }
 
 if __name__ == "__main__":
