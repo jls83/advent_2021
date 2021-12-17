@@ -17,6 +17,10 @@ fn build_map_key(pin_coll: &HashSet<char>) -> String {
     blah.iter().map(|c| *c).collect()
 }
 
+fn build_map_key_from_str(pin_coll: &str) -> String {
+    build_map_key(&pin_coll.chars().collect::<HashSet<char>>())
+}
+
 fn get_pin_mapping(things: Vec<&str>) -> HashMap<String, i32> {
     let mut len_map: HashMap<usize, Vec<HashSet<char>>> = HashMap::new();
     for thing in things {
@@ -69,31 +73,27 @@ fn get_pin_mapping(things: Vec<&str>) -> HashMap<String, i32> {
     ].into_iter().collect()
 }
 
-fn main() {
-    let configs: Vec<Vec<&str>> = include_str!("../input.txt")
-        .lines()
-        .map(|line| {
-            line.split(" | ").collect::<Vec<&str>>()[0]
-        })
-        .map(|s| s.split(" ").collect::<Vec<&str>>())
-        .collect();
+fn split_into_str_vec<'a>(s: &'a str, delim: &'a str) -> Vec<&'a str> {
+    s.split(delim).collect()
+}
 
-    let things: Vec<Vec<&str>> = include_str!("../input.txt")
+fn main() {
+    let others: Vec<Vec<Vec<&str>>> = include_str!("../input.txt")
         .lines()
-        .map(|line| {
-            line.split(" | ").collect::<Vec<&str>>()[1]
+        .map(|line| split_into_str_vec(line, " | "))
+        .map(|p| {
+            p.iter().map(|s| split_into_str_vec(s, " ")).collect()
         })
-        .map(|s| s.split(" ").collect::<Vec<&str>>())
         .collect();
 
     let mut answer: i32 = 0;
 
-    for (examples, outputs) in configs.into_iter().zip(things.iter()) {
-        let mapping = get_pin_mapping(examples);
+    for other in others {
+        let examples = &other[0];
+        let outputs = &other[1];
+        let mapping = get_pin_mapping(examples.to_vec());
         let blah: i32 = outputs.iter()
-            .map(|output| {
-                build_map_key(&output.chars().collect::<HashSet<char>>())
-            })
+            .map(|output| build_map_key_from_str(&output))
             .map(|output_key| {
                 mapping[&output_key]
             })
