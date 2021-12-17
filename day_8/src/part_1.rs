@@ -70,7 +70,7 @@ fn get_pin_mapping(things: Vec<&str>) -> HashMap<String, i32> {
 }
 
 fn main() {
-    let configs: Vec<Vec<&str>> = include_str!("../example.txt")
+    let configs: Vec<Vec<&str>> = include_str!("../input.txt")
         .lines()
         .map(|line| {
             line.split(" | ").collect::<Vec<&str>>()[0]
@@ -78,7 +78,7 @@ fn main() {
         .map(|s| s.split(" ").collect::<Vec<&str>>())
         .collect();
 
-    let things: Vec<Vec<&str>> = include_str!("../example.txt")
+    let things: Vec<Vec<&str>> = include_str!("../input.txt")
         .lines()
         .map(|line| {
             line.split(" | ").collect::<Vec<&str>>()[1]
@@ -86,13 +86,24 @@ fn main() {
         .map(|s| s.split(" ").collect::<Vec<&str>>())
         .collect();
 
-    for config in configs {
-        println!("{:?}", get_pin_mapping(config));
-    }
+    let mut counts: HashMap<i32, i32> = HashMap::new();
 
-    for thing in things {
-        for foo in thing {
-            println!("{:?}", build_map_key(&foo.chars().collect::<HashSet<char>>()));
+    for (config, thing) in configs.into_iter().zip(things.iter()) {
+        let mapping = get_pin_mapping(config);
+        for t in thing {
+            let k = build_map_key(&t.chars().collect::<HashSet<char>>());
+            let val = counts.entry(mapping[&k]).or_insert(0);
+            *val += 1
         }
     }
+
+    let answer: i32 = vec![1, 4, 7, 8].iter()
+        .map(|n| {
+            match counts.get(n) {
+                Some(count) => count,
+                _ => &0,
+            }
+        }).sum();
+
+    println!("{}", answer)
 }
