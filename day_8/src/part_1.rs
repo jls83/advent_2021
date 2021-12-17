@@ -78,7 +78,21 @@ fn main() {
         .map(|s| s.split(" ").collect::<Vec<&str>>())
         .collect();
 
+    let things: Vec<Vec<&str>> = include_str!("../example.txt")
+        .lines()
+        .map(|line| {
+            line.split(" | ").collect::<Vec<&str>>()[1]
+        })
+        .map(|s| s.split(" ").collect::<Vec<&str>>())
+        .collect();
+
     for config in configs {
         println!("{:?}", get_pin_mapping(config));
+    }
+
+    for thing in things {
+        for foo in thing {
+            println!("{:?}", build_map_key(&foo.chars().collect::<HashSet<char>>()));
+        }
     }
 }
