@@ -10,15 +10,6 @@ struct Coord {
     c: usize,
 }
 
-impl Coord {
-    fn off_board(&self) -> bool {
-        self.r < usize::MIN
-            || self.r > ROWS - 1
-            || self.c < usize::MIN
-            || self.c > COLS - 1
-    }
-}
-
 fn check_neighbors(matrix: &HashMap<Coord, u32>, coord: &Coord) -> u32 {
     let val = matrix.get(coord).unwrap();
 
