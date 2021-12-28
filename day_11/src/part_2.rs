@@ -11,14 +11,14 @@ struct Coord {
 }
 
 impl Coord {
-    fn shift(&self, r: i32, c: i32) -> Result<Coord, &'static str> {
+    fn shift(&self, r: i32, c: i32) -> Option<Coord> {
         let new_r = (self.r as i32) + r;
         let new_c = (self.c as i32) + c;
 
         if new_r < 0 || new_c < 0 || new_r > ROWS - 1 || new_c > COLS - 1 {
-            Err("Out of bounds")
+            None
         } else {
-            Ok(Coord {
+            Some(Coord {
                 r: new_r as usize,
                 c: new_c as usize,
             })
@@ -40,14 +40,7 @@ fn get_neighbors(coord: Coord) -> Vec<Coord> {
         coord.shift(1, 1),
     ];
 
-    raw_neighbors.iter()
-        .filter_map(|x| {
-            match x {
-                Ok(c) => Some(*c),
-                Err(_) => None
-            }
-        })
-        .collect()
+    raw_neighbors.into_iter().flatten().collect()
 }
 
 fn thing(matrix: &Matrix) -> (HashMap<Coord, u32>, usize) {
