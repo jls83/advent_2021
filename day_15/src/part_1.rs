@@ -1,12 +1,13 @@
 use std::include_str;
-use std::collections::{HashMap, HashSet};
+use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap, HashSet};
 
-// const ROWS: i32 = 100;
-// const COLS: i32 = 100;
-const ROWS: i32 = 10;
-const COLS: i32 = 10;
+const ROWS: i32 = 100;
+const COLS: i32 = 100;
+// const ROWS: i32 = 10;
+// const COLS: i32 = 10;
 
-#[derive(Copy, Clone, Debug, Ord, Eq, Hash, PartialEq, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
 struct Coord {
     r: usize,
     c: usize,
@@ -28,103 +29,116 @@ impl Coord {
     }
 }
 
-type Matrix = HashMap<Coord, u32>;
+#[derive(Debug)]
+struct Visit<V> {
+    coord: V,
+    distance: usize,
+}
 
-fn get_neighbors(coord: &Coord) -> HashSet<Coord> {
+impl<V> Ord for Visit<V> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.distance.cmp(&self.distance)
+    }
+}
+
+impl<V> PartialOrd for Visit<V> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<V> PartialEq for Visit<V> {
+    fn eq(&self, other: &Self) -> bool {
+        self.distance.eq(&other.distance)
+    }
+}
+
+impl<V> Eq for Visit<V> {}
+
+type Matrix = HashMap<Coord, usize>;
+
+fn get_neighbors(coord: &Coord) -> Vec<Coord> {
     let raw_neighbors = vec![
-        coord.shift(-1, -1),
+        // coord.shift(-1, -1),
         coord.shift(-1, 0),
-        coord.shift(-1, 1),
+        // coord.shift(-1, 1),
         coord.shift(0, -1),
         coord.shift(0, 1),
-        coord.shift(1, -1),
+        // coord.shift(1, -1),
         coord.shift(1, 0),
-        coord.shift(1, 1),
+        // coord.shift(1, 1),
     ];
 
     raw_neighbors.into_iter().flatten().collect()
 }
 
-fn get_min_key(dist: &HashMap<Coord, u32>, q: &HashSet<Coord>) -> Coord {
-    let min_key = q.iter()
-        .map(|c| (c, dist.get(c).unwrap()))
-        .min_by(|a, b| a.1.cmp(&b.1))
-        .map(|(k, _v)| k)
-        .unwrap();
+fn dijkstra(
+    start: Coord,
+    adjacency_list: &HashMap<Coord, Vec<(Coord, usize)>>,
+) -> HashMap<Coord, usize> {
+    let mut distances = HashMap::new();
+    let mut visited = HashSet::new();
+    let mut to_visit = BinaryHeap::new();
 
-    *min_key
-}
+    distances.insert(start, 0);
+    to_visit.push(Visit {
+        coord: start,
+        distance: 0,
+    });
 
-fn dijkstra(matrix: Matrix, source: Coord, target: Coord) -> Vec<Coord> {
-    let mut dist: HashMap<Coord, u32> = HashMap::new();
-    let mut prev: HashMap<Coord, Option<Coord>> = HashMap::new();
-
-    let mut q: HashSet<Coord> = HashSet::new();
-
-    for v in matrix.keys() {
-        dist.insert(*v, u32::MAX);
-        prev.insert(*v, None);
-
-        q.insert(*v);
-    }
-
-    dist.insert(source, 0);
-
-    while !q.is_empty() {
-        let mut min_key = get_min_key(&dist, &q);
-
-        q.remove(&min_key);
-
-        if min_key == target {
-            let mut res: Vec<Coord> = Vec::new();
-            while let Some(p) = prev[&min_key] {
-                res.push(p);
-                min_key = p;
-            }
-            return res;
+    while let Some(Visit { coord, distance }) = to_visit.pop() {
+        if !visited.insert(coord) {
+            continue;
         }
 
-        let neighbors: HashSet<Coord> = get_neighbors(&min_key).intersection(&q).map(|x| *x).collect();
+        if let Some(neighbors) = adjacency_list.get(&coord) {
+            for (neighbor, cost) in neighbors {
+                let new_distance = distance + cost;
+                let is_shorter = distances
+                    .get(&neighbor)
+                    .map_or(true, |&current| new_distance < current);
 
-        println!("{:?}", neighbors);
-
-        for neighbor in neighbors {
-            let dist_val = dist.entry(min_key).or_default();
-            let alt = *dist_val + matrix[&neighbor];
-
-            // println!("{:?} {:?} {:?}", min_key, neighbor, alt);
-
-            if alt >= *dist_val {
-                continue;
+                if is_shorter {
+                    distances.insert(*neighbor, new_distance);
+                    to_visit.push(Visit {
+                        coord: *neighbor,
+                        distance: new_distance,
+                    });
+                }
             }
-
-            *dist_val = alt;
-
-            let prev_val = prev.entry(min_key).or_default();
-            *prev_val = Some(min_key);
         }
     }
 
-    vec![]
+    distances
 }
 
 fn main() {
-    // let lines = include_str!("../input.txt").lines();
-    let lines = include_str!("../example.txt").lines();
+    let lines = include_str!("../input.txt").lines();
+    // let lines = include_str!("../example.txt").lines();
 
     let mut matrix: Matrix = HashMap::new();
 
     for (r, line) in lines.enumerate() {
         for (c, char) in line.chars().enumerate() {
-            let val = char.to_digit(10u32).unwrap();
-            matrix.insert(Coord{r, c}, val);
+            let val = char.to_digit(10).unwrap();
+            matrix.insert(Coord{r, c}, val.try_into().unwrap());
         }
     }
 
-    let foo = dijkstra(
-        matrix, 
-        Coord {r: 0, c: 0 },
-        Coord {r: (ROWS-1) as usize, c: (COLS-1) as usize});
+    let adjacency_list = matrix.keys()
+        .map(|k| {
+            let neighbors = get_neighbors(k);
+            let neighbors_mapped = neighbors.iter()
+                .map(|n| (*n, *matrix.get(&n).unwrap()))
+                .collect::<Vec<(Coord, usize)>>();
 
-    println!("{:?}", foo);
+            (*k, neighbors_mapped)
+        }).collect();
+
+    let start = Coord { r: 0, c: 0 };
+    let end = Coord { r: (ROWS - 1) as usize, c: (COLS - 1) as usize };
+
+    let foo = dijkstra(start, &adjacency_list);
+
+    println!("{:?}", foo.get(&end).unwrap());
 }
