@@ -1,3 +1,5 @@
+//! Dijkstra's algorithm implementation copied from the following Stack Overflow link:
+//! https://codereview.stackexchange.com/a/202879
 use std::include_str;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, HashSet};
