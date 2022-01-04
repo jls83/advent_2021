@@ -1,4 +1,16 @@
+from functools import reduce
+
 class Packet(object):
+    _OPERATOR_TYPE_MAP = {
+        0: 'sum',
+        1: 'product',
+        2: 'minimum',
+        3: 'maximum',
+        4: 'literal',
+        5: 'greater_than',
+        6: 'less_than',
+        7: 'equal_to',
+    }
     def __init__(self, version_number, type_id):
         self.version_number = version_number
         self.type_id = type_id
@@ -11,6 +23,31 @@ class Packet(object):
         if self.value is not None:
             return self.version_number
         return self.version_number + sum(sp.version_sum for sp in self.subpackets)
+
+    @property
+    def operator(self):
+        return self._OPERATOR_TYPE_MAP[self.type_id]
+
+    def evaluate(self):
+        if self.operator == 'literal':
+            return self.value
+        elif self.operator == 'sum':
+            return sum(sp.evaluate() for sp in self.subpackets)
+        elif self.operator == 'product':
+            return reduce(lambda a, c: a * c, (sp.evaluate() for sp in self.subpackets))
+        elif self.operator == 'minimum':
+            return min(sp.evaluate() for sp in self.subpackets)
+        elif self.operator == 'maximum':
+            return max(sp.evaluate() for sp in self.subpackets)
+        elif self.operator == 'greater_than':
+            subpacket_values = [sp.evaluate() for sp in self.subpackets]
+            return int(subpacket_values[0] > subpacket_values[1])
+        elif self.operator == 'less_than':
+            subpacket_values = [sp.evaluate() for sp in self.subpackets]
+            return int(subpacket_values[0] < subpacket_values[1])
+        elif self.operator == 'equal_to':
+            subpacket_values = [sp.evaluate() for sp in self.subpackets]
+            return int(subpacket_values[0] == subpacket_values[1])
 
 def hex_str_to_bin_str(hex_str):
     # return bin(int(hex_str, 16))[2:]
@@ -94,6 +131,3 @@ if __name__ == "__main__":
     bin_str = hex_str_to_bin_str(hex_str)
 
     outer_packet, _, _ = parse(bin_str, 0)
-
-    print(outer_packet.version_sum)
-
