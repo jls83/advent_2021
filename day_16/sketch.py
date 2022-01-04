@@ -1,41 +1,99 @@
 class Packet(object):
-    def __init__(self, version_number, type_id, payload):
+    def __init__(self, version_number, type_id):
         self.version_number = version_number
         self.type_id = type_id
-        self.payload = payload
+
+        self.value = None
+        self.subpackets = []
+
+    @property
+    def version_sum(self):
+        if self.value is not None:
+            return self.version_number
+        return self.version_number + sum(sp.version_sum for sp in self.subpackets)
 
 def hex_str_to_bin_str(hex_str):
-    return bin(int(hex_str, 16))[2:]
+    # return bin(int(hex_str, 16))[2:]
+    int_val = int('0x' + hex_str, 16)
+    return format(int_val, '0{}b'.format(len(hex_str) * 4))
 
-def parse_with_content_length(hex_str, content_length):
+def parse_literal(bin_str, start):
+    res = '0b'
+    i = start
+    next_i = i
+    while True:
+        res += bin_str[i+1:i+5]
+        next_i += 5
+        if bin_str[i] == '0':
+            break
+        i = next_i
 
+    consumed = next_i - start
 
+    return int(res, 2), next_i, consumed
 
-def parse(bin_str):
-    if len(bin_str) < 11:
-        return None, None
+def parse_sub_packet_with_length(bin_str, start, length):
+    payloads = []
+    next_i = start
+    while length:
+        payload, next_i, local_consumed = parse(bin_str, next_i)
+        payloads.append(payload)
+        length -= local_consumed
 
-    version_number = int(bin_str[0:3], 2)
-    type_id = int(bin_str[3:6], 2)
+    consumed = next_i - start
+
+    return payloads, next_i, consumed
+
+def parse_sub_packet_with_count(bin_str, start, count):
+    payloads = []
+    next_i = start
+    while count:
+        payload, next_i, _ = parse(bin_str, next_i)
+        payloads.append(payload)
+        count -= 1
+
+    consumed = next_i - start
+
+    return payloads, next_i, consumed
+
+def parse_operator(bin_str, start):
+    if bin_str[start] == '0':
+        sub_packet_length = int('0b' + bin_str[start+1:start+1+15], 2)
+        return parse_sub_packet_with_length(bin_str, start+1+15, sub_packet_length)
+    else:
+        sub_packet_count = int('0b' + bin_str[start+1:start+1+11], 2)
+        return parse_sub_packet_with_count(bin_str, start+1+11, sub_packet_count)
+
+def parse(bin_str, start):
+    i = start
+    next_i = start
+
+    version_number = int(bin_str[i:i+3], 2)
+    type_id = int(bin_str[i+3:i+6], 2)
+
+    packet = Packet(
+        version_number=version_number,
+        type_id=type_id,
+    )
 
     if type_id == 4:
-        res_str = ''
-        end = None  # TODO: disusting.
-        for i in range(6, len(bin_str), 5):
-            res_str += bin_str[i+1:i+5]
-            end = i+5
-            if bin_str[i] == '0':
-                break
-
-        return int(res_str, 2), bin_str[end:]
+        value, next_i, _ = parse_literal(bin_str, i+6)
+        packet.value = value
     else:
-        length_type_id = bin_str[7]
-        content_length = None
-        content_count = None
-        if length_type_id == '0':
-            content_length = int(bin_str[8:8+16], 2)
-            sub_packets, remainder = parse_with_content_length(bin_str[8+16:], content_length)
-        else:  # if length_type_id == '`'
-            content_count = int(bin_str[8:8+12], 2)
-            sub_packets, remainder = parse_with_content_count(bin_str[8+12:], content_count)
+        local_subpackets, next_i, _ = parse_operator(bin_str, i+6)
+        packet.subpackets += local_subpackets
+
+    consumed = next_i - start
+
+    return packet, next_i, consumed
+
+if __name__ == "__main__":
+    with open('input.txt', 'r') as f:
+        hex_str = f.read().strip()
+
+    bin_str = hex_str_to_bin_str(hex_str)
+
+    outer_packet, _, _ = parse(bin_str, 0)
+
+    print(outer_packet.version_sum)
 
