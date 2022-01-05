@@ -1,3 +1,4 @@
+import math
 from functools import reduce
 
 class Packet(object):
@@ -50,24 +51,32 @@ class Packet(object):
             return int(subpacket_values[0] == subpacket_values[1])
 
 def hex_str_to_bin_str(hex_str):
-    # return bin(int(hex_str, 16))[2:]
     int_val = int('0x' + hex_str, 16)
     return format(int_val, '0{}b'.format(len(hex_str) * 4))
 
+def digit_count_with_padding(n):
+    log_2_x = math.log2(n)
+    x = log_2_x % 4
+    return int((math.log2(n) - x) + 4)
+
+def get_substring_as_int(bin_str, start, length):
+    return int('0b' + bin_str[start:start+length], 2)
+
 def parse_literal(bin_str, start):
-    res = '0b'
+    res = 0
     i = start
     next_i = i
     while True:
-        res += bin_str[i+1:i+5]
+        res <<=4
+        res += get_substring_as_int(bin_str, i+1, 4)
         next_i += 5
-        if bin_str[i] == '0':
+        if get_substring_as_int(bin_str, i, 1) == 0:
             break
         i = next_i
 
     consumed = next_i - start
 
-    return int(res, 2), next_i, consumed
+    return res, next_i, consumed
 
 def parse_sub_packet_with_length(bin_str, start, length):
     payloads = []
@@ -94,19 +103,19 @@ def parse_sub_packet_with_count(bin_str, start, count):
     return payloads, next_i, consumed
 
 def parse_operator(bin_str, start):
-    if bin_str[start] == '0':
-        sub_packet_length = int('0b' + bin_str[start+1:start+1+15], 2)
+    if get_substring_as_int(bin_str, start, 1) == 0:
+        sub_packet_length = get_substring_as_int(bin_str, start+1, 15)
         return parse_sub_packet_with_length(bin_str, start+1+15, sub_packet_length)
     else:
-        sub_packet_count = int('0b' + bin_str[start+1:start+1+11], 2)
+        sub_packet_count = get_substring_as_int(bin_str, start+1, 11)
         return parse_sub_packet_with_count(bin_str, start+1+11, sub_packet_count)
 
 def parse(bin_str, start):
     i = start
     next_i = start
 
-    version_number = int(bin_str[i:i+3], 2)
-    type_id = int(bin_str[i+3:i+6], 2)
+    version_number = get_substring_as_int(bin_str, i, 3)
+    type_id = get_substring_as_int(bin_str, i+3, 3)
 
     packet = Packet(
         version_number=version_number,
