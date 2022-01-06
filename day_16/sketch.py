@@ -1,16 +1,17 @@
 import math
+import operator
 from functools import reduce
 
 class Packet(object):
     _OPERATOR_TYPE_MAP = {
-        0: 'sum',
-        1: 'product',
-        2: 'minimum',
-        3: 'maximum',
-        4: 'literal',
-        5: 'greater_than',
-        6: 'less_than',
-        7: 'equal_to',
+        0: operator.add,  # sum
+        1: operator.mul,  # product
+        2: lambda a, c: a if a < c else c,  # minimum
+        3: lambda a, c: a if a > c else c,  # maximum
+        4: None,  # literal
+        5: operator.gt,  # greater_than
+        6: operator.lt,  # less_than
+        7: operator.eq,  # equal_to
     }
     def __init__(self, version_number, type_id):
         self.version_number = version_number
@@ -30,25 +31,9 @@ class Packet(object):
         return self._OPERATOR_TYPE_MAP[self.type_id]
 
     def evaluate(self):
-        if self.operator == 'literal':
+        if self.operator is None:
             return self.value
-        elif self.operator == 'sum':
-            return sum(sp.evaluate() for sp in self.subpackets)
-        elif self.operator == 'product':
-            return reduce(lambda a, c: a * c, (sp.evaluate() for sp in self.subpackets))
-        elif self.operator == 'minimum':
-            return min(sp.evaluate() for sp in self.subpackets)
-        elif self.operator == 'maximum':
-            return max(sp.evaluate() for sp in self.subpackets)
-        elif self.operator == 'greater_than':
-            subpacket_values = [sp.evaluate() for sp in self.subpackets]
-            return int(subpacket_values[0] > subpacket_values[1])
-        elif self.operator == 'less_than':
-            subpacket_values = [sp.evaluate() for sp in self.subpackets]
-            return int(subpacket_values[0] < subpacket_values[1])
-        elif self.operator == 'equal_to':
-            subpacket_values = [sp.evaluate() for sp in self.subpackets]
-            return int(subpacket_values[0] == subpacket_values[1])
+        return reduce(self.operator, (sp.evaluate() for sp in self.subpackets))
 
 def hex_str_to_bin_str(hex_str):
     int_val = int('0x' + hex_str, 16)
