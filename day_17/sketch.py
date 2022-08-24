@@ -37,22 +37,32 @@ class Rectangle:
         return x_check or y_check
 
 
-def next_position(curr_position: Point, curr_velocity: VelocityVector) -> Tuple[Point, VelocityVector]:
+def next_x_position_and_velocity(curr_position: Point, curr_velocity: VelocityVector) -> Tuple[int, int]:
     next_x_position = curr_position.x + curr_velocity.x
-    next_y_position = curr_position.y + curr_velocity.y
-
     next_x_velocity = curr_velocity.x
     if curr_velocity.x > 0:
         next_x_velocity -= 1
     elif curr_velocity.x < 0:
         next_x_velocity += 1
 
+    return next_x_position, next_x_velocity
+
+
+def next_y_position_and_velocity(curr_position: Point, curr_velocity: VelocityVector) -> Tuple[int, int]:
+    next_y_position = curr_position.y + curr_velocity.y
     next_y_velocity = curr_velocity.y - 1
+
+    return next_y_position, next_y_velocity
+
+
+def next_position(curr_position: Point, curr_velocity: VelocityVector) -> Tuple[Point, VelocityVector]:
+    next_x_position, next_x_velocity = next_x_position_and_velocity(curr_position, curr_velocity)
+    next_y_position, next_y_velocity = next_y_position_and_velocity(curr_position, curr_velocity)
 
     return Point(next_x_position, next_y_position), VelocityVector(next_x_velocity, next_y_velocity)
 
 
-def run_trials(target_rectangle: Rectangle, initial_velocity: VelocityVector) -> bool:
+def run_trial(target_rectangle: Rectangle, initial_velocity: VelocityVector) -> bool:
     curr_position = Point(0, 0)
     curr_velocity = initial_velocity
 
@@ -69,3 +79,4 @@ def run_trials(target_rectangle: Rectangle, initial_velocity: VelocityVector) ->
             return True
 
     return False
+
