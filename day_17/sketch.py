@@ -62,7 +62,7 @@ def next_position(curr_position: Point, curr_velocity: VelocityVector) -> Tuple[
     return Point(next_x_position, next_y_position), VelocityVector(next_x_velocity, next_y_velocity)
 
 
-def run_trial(target_rectangle: Rectangle, initial_velocity: VelocityVector) -> bool:
+def run_trial(target_rectangle: Rectangle, initial_velocity: VelocityVector) -> Tuple[bool, int]:
     curr_position = Point(0, 0)
     curr_velocity = initial_velocity
 
@@ -76,7 +76,7 @@ def run_trial(target_rectangle: Rectangle, initial_velocity: VelocityVector) -> 
 
         if target_rectangle.in_rectangle(curr_position):
             print(f'Highest altitude = {highest_position.y}')
-            return True
+            return True, highest_position.y
 
-    return False
+    return False, 0
 
