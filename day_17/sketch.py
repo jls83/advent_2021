@@ -119,9 +119,31 @@ def x_velo_in_range(velocity: int, start: int, end: int):
 
     return res, False
 
+def y_velo_in_range(velocity: int, start: int, end: int):
+    t = 0
+    position = 0
+    res = []
+    s = set(range(end, start))
+    while end <= position:
+        if position in s:
+            res.append(t)
+        # next_position = position + velocity
+        # position = next_position
+        position += velocity
+        velocity -= 1
+        t += 1
+
+    return res
+
 def get_valid_x_velos(min_velocity: int, start: int, end: int):
     blah = ((i, x_velo_in_range(i, start, end)) for i in range(min_velocity, end))
     d = {i: velos for i, velos in blah if velos[0]}
+    return d
+
+def get_valid_y_velos_eh(start: int, end: int):
+    min_velocity = 1
+    blah = ((i, y_velo_in_range(i, start, end)) for i in range(min_velocity, abs(end)))
+    d = {i: velos for i, velos in blah if velos}
     return d
 
 
