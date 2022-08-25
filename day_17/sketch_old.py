@@ -1,5 +1,6 @@
 import math
-from typing import List, Tuple
+from typing import Tuple
+
 
 class Point:
     def __init__(self, x: int, y: int):
@@ -37,33 +38,6 @@ class Rectangle:
         return x_check or y_check
 
 
-def create_triangular_num(n: int) -> int:
-    return (n * (n + 1)) // 2
-
-
-def get_triangular_base(n: int) -> int:
-    return math.floor(math.sqrt(n * 2))
-
-
-def is_triangular_num(n: int) -> bool:
-    base = get_triangular_base(n)
-    return n == create_triangular_num(base)
-
-
-def get_fall_distances(max_height: int, start: int, end: int) -> List[int]:
-    start_normalized = abs(start - max_height)
-    end_normalized = abs(end - max_height)
-    return [n for n in range(start_normalized, end_normalized + 1) if is_triangular_num(n)]
-
-
-def get_possible_y_velocities(start: int, end: int, max_velocity: int=10) -> List[int]:
-    return [i for i in range(max_velocity) if get_fall_distances(create_triangular_num(i), start, end)]
-
-
-def get_min_x_velocity(min_distance: int) -> int:
-    return get_triangular_base(min_distance)
-
-
 def next_x_position_and_velocity(curr_position: Point, curr_velocity: VelocityVector) -> Tuple[int, int]:
     next_x_position = curr_position.x + curr_velocity.x
     next_x_velocity = curr_velocity.x
@@ -89,6 +63,90 @@ def next_position(curr_position: Point, curr_velocity: VelocityVector) -> Tuple[
     return Point(next_x_position, next_y_position), VelocityVector(next_x_velocity, next_y_velocity)
 
 
+######
+
+def get_min_velocity(measure: int) -> int:
+    return math.floor(math.sqrt(measure * 2))
+
+
+def get_max_time(measure: int, velocity: int) -> int:
+    t = 0
+    while measure > 0:
+        measure -= velocity
+        velocity -= 1
+        t += 1
+
+    return t
+
+def pos_y(initial_velocity: int, t: int, initial_position: int = 0) -> int:
+    gravity_sum = (t * (t - 1)) // 2  # TODO: comment
+    return initial_position + (initial_velocity * t) - gravity_sum
+
+def pos_x(initial_velocity: int, t: int, initial_position: int = 0) -> int:
+    is_negative = (initial_velocity < 0)
+    velocity = abs(initial_velocity)
+
+    distance_travelled = 0
+    while t > 0 and velocity > 0:
+        distance_travelled += velocity
+        velocity -= 1
+        t -= 1
+
+    if is_negative:
+        distance_travelled *= -1
+
+    return distance_travelled + initial_position
+
+
+def foo(initial_velocity: int, position: int):
+    b = ((2 * initial_velocity) + 1) / 2
+    discrim = math.sqrt((b ** 2) + (2 ** position))
+    return b+discrim, b-discrim
+
+def x_velo_in_range(velocity: int, start: int, end: int):
+    t = 0
+    position = 0
+    res = []
+    while position < end:
+        if start <= position <= end:
+            res.append(t)
+        next_position = position + velocity
+        if next_position == position:
+            return res, True
+        position = next_position
+        velocity -= 1
+        t += 1
+
+    return res, False
+
+def y_velo_in_range(velocity: int, start: int, end: int):
+    t = 0
+    position = 0
+    res = []
+    s = set(range(end, start))
+    while end <= position:
+        if position in s:
+            res.append(t)
+        # next_position = position + velocity
+        # position = next_position
+        position += velocity
+        velocity -= 1
+        t += 1
+
+    return res
+
+def get_valid_x_velos(min_velocity: int, start: int, end: int):
+    blah = ((i, x_velo_in_range(i, start, end)) for i in range(min_velocity, end))
+    d = {i: velos for i, velos in blah if velos[0]}
+    return d
+
+def get_valid_y_velos_eh(start: int, end: int):
+    min_velocity = 1
+    blah = ((i, y_velo_in_range(i, start, end)) for i in range(min_velocity, abs(end)))
+    d = {i: velos for i, velos in blah if velos}
+    return d
+
+
 def run_trial(target_rectangle: Rectangle, initial_velocity: VelocityVector) -> Tuple[bool, int]:
     curr_position = Point(0, 0)
     curr_velocity = initial_velocity
@@ -102,30 +160,8 @@ def run_trial(target_rectangle: Rectangle, initial_velocity: VelocityVector) -> 
             highest_position = curr_position
 
         if target_rectangle.in_rectangle(curr_position):
+            print(f'Highest altitude = {highest_position.y}')
             return True, highest_position.y
 
     return False, 0
 
-
-def thinger(point_1: Point, point_2: Point):
-    rect = Rectangle(point_1, point_2)
-    min_x_val, max_x_val = sorted([point_1.x, point_2.x])
-    closest_y_val, furthest_y_val = sorted([point_1.y, point_2.y], key=abs)
-    min_x_velocity = get_min_x_velocity(min_x_val)
-
-    max_y_velocity = abs(furthest_y_val)
-
-    possible_y_velocities = get_possible_y_velocities(closest_y_val, furthest_y_val, max_velocity=max_y_velocity)
-
-    max_height = float('-inf')
-
-    for x_velocity in range(min_x_velocity, max_x_val+1):
-        for y_velocity in possible_y_velocities:
-            found, height = run_trial(rect, VelocityVector(x_velocity, y_velocity))
-
-            if not found:
-                continue
-
-            max_height = max(max_height, height)
-
-    print(max_height)
