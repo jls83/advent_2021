@@ -120,7 +120,8 @@ def thinger(point_1: Point, point_2: Point):
     max_height = float('-inf')
 
     for x_velocity in range(min_x_velocity, max_x_val+1):
-        for y_velocity in possible_y_velocities:
+        # for y_velocity in possible_y_velocities:
+        for y_velocity in range(1, max_y_velocity):
             found, height = run_trial(rect, VelocityVector(x_velocity, y_velocity))
 
             if not found:
